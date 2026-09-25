@@ -27,6 +27,9 @@ def retrieve(
             fallback = pageindex_search(query, top_k=top_k)
             if fallback:
                 return fallback
+            # With no fallback evidence, return no chunks so generation uses
+            # its safe-refusal path instead of arbitrary weak matches.
+            return []
         except Exception:
             return hybrid[:top_k]
     return hybrid[:top_k]

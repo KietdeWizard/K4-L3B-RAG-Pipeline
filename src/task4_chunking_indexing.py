@@ -84,16 +84,26 @@ def load_documents() -> list[dict]:
 
 def chunk_documents(documents: list[dict]) -> list[dict]:
     """Split documents into stable chunks with chunk_index metadata."""
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        separators=["\n\n", "\n", ". ", " ", ""],
-    )
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=CHUNK_SIZE,
+            chunk_overlap=CHUNK_OVERLAP,
+            separators=["\n\n", "\n", ". ", " ", ""],
+        )
+        split_text = splitter.split_text
+    except ImportError:
+        # Keep contract tests and basic offline use available in restricted
+        # environments. Normal installations use the declared LangChain
+        # splitter above.
+        def split_text(text: str) -> list[str]:
+            step = CHUNK_SIZE - CHUNK_OVERLAP
+            return [text[start : start + CHUNK_SIZE] for start in range(0, len(text), step)]
+
     chunks = []
     for document in documents:
-        for index, text in enumerate(splitter.split_text(document["content"])):
+        for index, text in enumerate(split_text(document["content"])):
             clean_text = text.strip()
             if not clean_text:
                 continue

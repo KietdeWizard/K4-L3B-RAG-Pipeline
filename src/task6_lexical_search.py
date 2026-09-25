@@ -1,6 +1,7 @@
 """Task 6 - Lexical search with BM25."""
 
 import re
+import math
 
 from .task4_chunking_indexing import chunk_documents, load_documents
 
@@ -21,10 +22,40 @@ def _load_corpus() -> list[dict]:
 
 def build_bm25_index(corpus: list[dict]):
     """Create a BM25 index from the same chunk corpus used by Task 4."""
-    from rank_bm25 import BM25Okapi
-
     tokenized = [_tokenize(item["content"]) for item in corpus]
-    return BM25Okapi(tokenized)
+    try:
+        from rank_bm25 import BM25Okapi
+
+        return BM25Okapi(tokenized)
+    except ImportError:
+        class OfflineBM25:
+            def __init__(self, documents: list[list[str]]) -> None:
+                self.documents = documents
+                self.average_length = (
+                    sum(map(len, documents)) / len(documents) if documents else 0.0
+                )
+
+            def get_scores(self, query_tokens: list[str]) -> list[float]:
+                scores = []
+                document_count = len(self.documents)
+                for document in self.documents:
+                    frequencies = {token: document.count(token) for token in set(document)}
+                    score = 0.0
+                    for token in query_tokens:
+                        containing = sum(token in candidate for candidate in self.documents)
+                        inverse_frequency = math.log(
+                            1.0 + (document_count - containing + 0.5) / (containing + 0.5)
+                        )
+                        frequency = frequencies.get(token, 0)
+                        normalizer = frequency + 1.5 * (
+                            0.25
+                            + 0.75 * len(document) / max(self.average_length, 1.0)
+                        )
+                        score += inverse_frequency * frequency * 2.5 / max(normalizer, 1.0)
+                    scores.append(score)
+                return scores
+
+        return OfflineBM25(tokenized)
 
 
 def lexical_search(query: str, top_k: int = 10) -> list[dict]:

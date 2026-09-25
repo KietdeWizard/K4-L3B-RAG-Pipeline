@@ -245,6 +245,40 @@ def test_retrieve_survives_fallback_provider_error(monkeypatch):
     assert output == hybrid
 
 
+def test_retrieve_returns_no_evidence_when_fallback_is_unavailable(monkeypatch):
+    import src.task9_retrieval_pipeline as pipeline
+
+    dense = [result("chunk-0", 0.2, "dense")]
+    hybrid = [result("chunk-0", 0.02, "hybrid")]
+    monkeypatch.setattr(pipeline, "semantic_search", lambda query, top_k: dense)
+    monkeypatch.setattr(pipeline, "lexical_search", lambda query, top_k: [])
+    monkeypatch.setattr(pipeline, "rerank_rrf", lambda lists, top_k: hybrid)
+    monkeypatch.setattr(pipeline, "pageindex_search", lambda query, top_k: [])
+
+    assert pipeline.retrieve("unanswerable question", top_k=2, score_threshold=0.5) == []
+
+
+def test_local_vectorless_fallback_returns_pageindex_contract(monkeypatch):
+    import src.task4_chunking_indexing as indexing
+    from src.task8_pageindex_vectorless import pageindex_search
+
+    documents = [{
+        "id": "hoi-an.md",
+        "content": "Hoi An ancient town is a destination in central Vietnam.",
+        "metadata": {
+            "source": "hoi-an.md",
+            "title": "Hoi An",
+            "doc_type": "news",
+            "url": "https://example.test/hoi-an",
+        },
+    }]
+    monkeypatch.setattr(indexing, "load_documents", lambda: documents)
+    output = pageindex_search("Hoi An destination", top_k=2)
+
+    validate_search_results(output, top_k=2, expected_method="pageindex")
+    assert output[0]["id"].startswith("hoi-an.md::chunk-")
+
+
 def test_generation_result_validator_accepts_safe_refusal():
     validate_generation_result(
         {

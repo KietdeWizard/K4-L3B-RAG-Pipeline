@@ -12,7 +12,7 @@
 - Dense fallback threshold: 0.30.
 - Config A: dense-only retrieval.
 - Config B: hybrid dense + BM25 + RRF.
-- Fallback: PageIndex-safe integration returns no results when `PAGEINDEX_API_KEY` is not configured and does not crash the pipeline.
+- Fallback: deterministic vectorless heading/text search returns `pageindex` results without an API key; provider failure is isolated and does not crash the pipeline.
 
 ## Overall Scores
 
@@ -51,7 +51,7 @@ Config B is therefore the recommended default for the chatbot. The trade-off is 
 
 - Question: "What should the chatbot do when there is not enough evidence?"
 - Failure stage: Generation policy.
-- Root cause: A local deterministic generator cannot reason as deeply as an external LLM, so refusal behavior depends heavily on whether retrieval returns an empty list or weak evidence.
+- Root cause: A local deterministic generator cannot reason as deeply as an external LLM, so refusal behavior depends heavily on calibrated retrieval confidence and whether vectorless fallback finds matching evidence.
 - Recommendation: Keep the safe refusal path, tune `SCORE_THRESHOLD` with more out-of-domain questions, and optionally configure an API-backed provider for final natural-language answers.
 
 ## Recommendations

@@ -50,19 +50,51 @@ def _local_grounded_answer(user_message: str) -> str:
     """Small offline answerer used when no external LLM key is configured."""
     context_match = re.search(r"Context:\n(.+?)\n\nQuestion:", user_message, flags=re.S)
     context = context_match.group(1).strip() if context_match else user_message
+    question_match = re.search(r"\n\nQuestion:\s*(.+)\s*$", user_message, flags=re.S)
+    question = question_match.group(1).strip() if question_match else ""
+    query_terms = {
+        token
+        for token in re.findall(r"[A-Za-z][A-Za-z-]{2,}", question.lower())
+        if token not in {"what", "which", "where", "when", "about", "from", "the", "and", "can"}
+    }
     snippets = []
     for block in context.split("\n\n---\n\n"):
         header, _, body = block.partition("\n")
         source_match = re.search(r"Source:\s*([^|]+)", header)
+        title_match = re.search(r"Title:\s*([^|]+)", header)
         source = source_match.group(1).strip() if source_match else "retrieved source"
-        clean_body = re.sub(r"\s+", " ", body).strip()
-        if clean_body:
-            snippets.append(f"{clean_body[:260]} [{source}]")
+        title = title_match.group(1).strip() if title_match else source
+        body = re.sub(r"\[[^\]]*\]\([^)]*\)", " ", body)
+        body = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", body)
+        lines = [
+            re.sub(r"\s+", " ", line).strip(" -*")
+            for line in body.splitlines()
+        ]
+        clean_lines = [
+            line
+            for line in lines
+            if len(line) >= 45
+            and "javascript:void" not in line.lower()
+            and "vietnam tourism" not in line.lower()
+            and not line.lower().startswith(("home", "places to go", "things to do"))
+        ]
+        clean_body = " ".join(clean_lines)
+        sentences = re.split(r"(?<=[.!?])\s+", clean_body)
+        scored = []
+        for sentence in sentences:
+            sentence_terms = set(re.findall(r"[A-Za-z][A-Za-z-]{2,}", sentence.lower()))
+            overlap = len(query_terms & sentence_terms)
+            if len(sentence) >= 45:
+                scored.append((overlap, sentence))
+        scored.sort(key=lambda pair: (pair[0], len(pair[1])), reverse=True)
+        if scored:
+            chosen = scored[0][1][:320]
+            snippets.append(f"{title}: {chosen} [{source}]")
         if len(snippets) == 2:
             break
     if not snippets:
         return SAFE_REFUSAL
-    return "Based on the retrieved corpus: " + " ".join(snippets)
+    return "Based on the retrieved corpus, the strongest evidence is: " + " ".join(snippets)
 
 
 def call_llm(system_prompt: str, user_message: str) -> str:

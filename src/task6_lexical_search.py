@@ -33,18 +33,23 @@ def lexical_search(query: str, top_k: int = 10) -> list[dict]:
     if top_k <= 0 or not query.strip() or not corpus:
         return []
 
-    import numpy as np
-
     bm25 = build_bm25_index(corpus)
-    scores = bm25.get_scores(_tokenize(query))
-    indices = np.argsort(scores)[::-1][:top_k]
+    query_tokens = _tokenize(query)
+    raw_scores = bm25.get_scores(query_tokens)
+
+    ranked = []
+    for index, item in enumerate(corpus):
+        content_tokens = set(_tokenize(item["content"]))
+        overlap = sum(1 for token in query_tokens if token in content_tokens)
+        # BM25 can produce zero or negative IDF on tiny corpora. Keep a small
+        # lexical-overlap component so exact matches still rank deterministically.
+        score = max(float(raw_scores[index]), 0.0) + overlap
+        ranked.append((score, index))
+    ranked.sort(key=lambda pair: pair[0], reverse=True)
 
     results = []
-    for index in indices:
-        score = float(scores[index])
-        if score <= 0:
-            continue
-        item = corpus[int(index)]
+    for score, index in ranked[:top_k]:
+        item = corpus[index]
         results.append(
             {
                 "id": item["id"],

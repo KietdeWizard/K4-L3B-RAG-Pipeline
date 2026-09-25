@@ -15,31 +15,50 @@ Cài browser trước khi chạy:
 
 import asyncio
 import json
+import re
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "landing" / "news"
 
 ARTICLE_URLS = [
-    # TODO: Thêm ít nhất 5 public URL.
+    "https://vietnam.travel/things-to-do/10-must-try-hanoi-dishes",
+    "https://vietnam.travel/things-to-do/10-delicious-vietnamese-rolls",
+    "https://vietnam.travel/places-to-go/central-vietnam/hoi-an",
+    "https://vietnam.travel/plan-your-trip/itineraries",
+    "https://vietnam.travel/places-to-go/southern-vietnam/phu-quoc",
 ]
 
 
 async def crawl_article(url: str) -> dict:
-    # TODO: Implement crawling logic.
-    #
-    # from datetime import datetime
-    # from crawl4ai import AsyncWebCrawler
-    #
-    # async with AsyncWebCrawler() as crawler:
-    #     result = await crawler.arun(url=url)
-    #     return {
-    #         "url": url,
-    #         "title": result.metadata.get("title", "Unknown"),
-    #         "date_crawled": datetime.now().isoformat(),
-    #         "content_markdown": result.markdown,
-    #     }
-    raise NotImplementedError("Implement crawl_article")
+    try:
+        from crawl4ai import AsyncWebCrawler
+
+        async with AsyncWebCrawler() as crawler:
+            result = await crawler.arun(url=url)
+            markdown = result.markdown
+            title = result.metadata.get("title", "")
+    except ImportError:
+        request = Request(url, headers={"User-Agent": "K4-L3B-RAG-Pipeline/1.0"})
+        with urlopen(request, timeout=60) as response:
+            html = response.read().decode("utf-8", errors="replace")
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
+        title = re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else url
+        body = re.sub(r"<script\b.*?</script>|<style\b.*?</style>", " ", html, flags=re.I | re.S)
+        body = re.sub(r"<[^>]+>", " ", body)
+        body = re.sub(r"\s+", " ", body).strip()
+        markdown = f"# {title}\n\n{body}"
+
+    if len(markdown.strip()) < 200:
+        raise ValueError(f"Crawled content is too short: {url}")
+    return {
+        "url": url,
+        "title": title or "Vietnam Travel article",
+        "date_crawled": datetime.now(timezone.utc).isoformat(),
+        "content_markdown": markdown,
+    }
 
 
 async def crawl_all() -> None:

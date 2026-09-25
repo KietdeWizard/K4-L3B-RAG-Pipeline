@@ -1,11 +1,13 @@
 import streamlit as st
 from dotenv import load_dotenv
 
+from src.task10_generation import generate_with_citation
+
 
 load_dotenv()
 
 st.set_page_config(
-    page_title="RAG Chatbot",
+    page_title="Vietnam Tourism RAG Chatbot",
     page_icon="",
     layout="wide",
 )
@@ -14,19 +16,27 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 with st.sidebar:
-    st.title("RAG Chatbot")
-    st.caption("Thay mô tả theo đề tài của nhóm")
-    top_k = st.slider("Số chunks", 3, 10, 5)
+    st.title("Vietnam Tourism RAG")
+    st.caption("Hybrid dense + BM25 + RRF retrieval with citations")
+    top_k = st.slider("Retrieved chunks", 3, 10, 5)
 
-st.title("RAG Chatbot")
-st.caption("Thay tiêu đề và hướng dẫn sử dụng")
+st.title("Vietnam Tourism RAG Chatbot")
+st.caption("Ask questions about the collected Vietnam tourism law and public travel corpus.")
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        # TODO: Hiển thị sources và retrieval score.
+        for source in message.get("sources", []):
+            metadata = source["metadata"]
+            label = metadata.get("title") or metadata.get("source")
+            with st.expander(f"{label} - {source['retrieval_method']} - {source['score']:.4f}"):
+                if metadata.get("url"):
+                    st.markdown(f"Source URL: {metadata['url']}")
+                else:
+                    st.markdown(f"Source file: {metadata.get('source')}")
+                st.markdown(source["content"])
 
-query = st.chat_input("Nhập câu hỏi...")
+query = st.chat_input("Enter a question...")
 
 if query:
     st.session_state.messages.append({"role": "user", "content": query})
@@ -35,11 +45,23 @@ if query:
         st.markdown(query)
 
     with st.chat_message("assistant"):
-        # TODO: Gọi generate_with_citation(query, top_k).
-        answer = "TODO: Itegration RAG Pipeline hêre"
-        sources = []
+        with st.spinner("Retrieving evidence..."):
+            result = generate_with_citation(query, top_k)
+        answer = result["answer"]
+        sources = result["sources"]
         st.markdown(answer)
+        st.caption(f"Retrieval source: {result['retrieval_source']}")
 
-        # TODO: Hiển thị sources và citation.
+        for source in sources:
+            metadata = source["metadata"]
+            label = metadata.get("title") or metadata.get("source")
+            with st.expander(f"{label} - {source['retrieval_method']} - {source['score']:.4f}"):
+                if metadata.get("url"):
+                    st.markdown(f"Source URL: {metadata['url']}")
+                else:
+                    st.markdown(f"Source file: {metadata.get('source')}")
+                st.markdown(source["content"])
 
-    # TODO: Lưu answer và sources vào session state.
+    st.session_state.messages.append(
+        {"role": "assistant", "content": answer, "sources": sources}
+    )

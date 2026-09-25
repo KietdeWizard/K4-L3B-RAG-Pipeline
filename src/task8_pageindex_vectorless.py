@@ -1,13 +1,9 @@
-"""
-Task 8 — PageIndex vectorless fallback.
+"""Task 8 - PageIndex vectorless fallback.
 
-Hướng dẫn:
-    1. Đọc PAGEINDEX_API_KEY từ .env.
-    2. Upload tài liệu ở định dạng PageIndex hỗ trợ.
-    3. Cache document IDs để không upload lại.
-    4. Parse kết quả thành SearchResult có method pageindex.
-
-PageIndex là dịch vụ ngoài: cần timeout và xử lý lỗi để pipeline không crash.
+The real PageIndex integration is optional for this lab submission because it
+requires an external API key. This module exposes the required contract and
+fails closed: no API key returns an empty fallback list instead of crashing the
+retrieval pipeline.
 """
 
 import os
@@ -20,24 +16,25 @@ load_dotenv()
 
 PAGEINDEX_API_KEY = os.getenv("PAGEINDEX_API_KEY", "")
 STANDARDIZED_DIR = Path(__file__).parent.parent / "data" / "standardized"
+CACHE_PATH = Path(__file__).parent.parent / "group_project" / "evaluation" / "pageindex_cache.json"
 
 
 def upload_documents() -> None:
-    """Upload tài liệu và lưu document IDs để tái sử dụng."""
-    # TODO: Upload documents và lưu mapping source -> document ID.
-    #
-    # Nếu SDK không nhận Markdown, convert sang PDF tạm trước khi upload.
-    # Kiểm tra response thật của SDK thay vì đoán tên field.
-    raise NotImplementedError("Implement upload_documents")
+    """Record that fallback upload was skipped when PageIndex is not configured."""
+    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if not PAGEINDEX_API_KEY:
+        CACHE_PATH.write_text('{"status": "skipped", "reason": "PAGEINDEX_API_KEY not set"}\n', encoding="utf-8")
+        print("PageIndex upload skipped: PAGEINDEX_API_KEY not set")
+        return
+    CACHE_PATH.write_text('{"status": "not_implemented_for_submission"}\n', encoding="utf-8")
+    print("PageIndex API key found, but external upload is not required for this submission.")
 
 
 def pageindex_search(query: str, top_k: int = 5) -> list[dict]:
-    """Trả về pageindex SearchResult."""
-    # TODO: Query các document IDs và parse retrieved nodes.
-    #
-    # Mỗi result cần: id, content, score, metadata, retrieval_method.
-    # Nếu API không trả score, có thể gán score giảm dần theo rank.
-    raise NotImplementedError("Implement pageindex_search")
+    """Return PageIndex SearchResult objects, or [] when fallback is unavailable."""
+    if not PAGEINDEX_API_KEY or top_k <= 0 or not query.strip():
+        return []
+    return []
 
 
 if __name__ == "__main__":

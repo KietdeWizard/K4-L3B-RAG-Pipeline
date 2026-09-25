@@ -1,0 +1,77 @@
+[
+  {
+    "question": "Which public source in the corpus describes must-try Hanoi dishes?",
+    "expected_answer": "The Hanoi food article is article_01 from Vietnam Travel, titled around must-try Hanoi dishes.",
+    "expected_context": "article_01.json and data/standardized/news/article_01.md from https://vietnam.travel/things-to-do/10-must-try-hanoi-dishes."
+  },
+  {
+    "question": "Which corpus article should answer questions about Vietnamese rolls?",
+    "expected_answer": "The Vietnamese rolls questions should use article_02, the Vietnam Travel page about 10 delicious Vietnamese rolls.",
+    "expected_context": "article_02.json and article_02.md, focused on Vietnamese food and rolls."
+  },
+  {
+    "question": "Which article is the primary evidence for Hoi An destination questions?",
+    "expected_answer": "Hoi An destination questions should cite article_03 from Vietnam Travel's central Vietnam Hoi An page.",
+    "expected_context": "article_03.json, article_03.md, Hoi An | Vietnam Tourism, source https://vietnam.travel/places-to-go/central-vietnam/hoi-an."
+  },
+  {
+    "question": "Which public page in the corpus supports questions about Vietnam travel itineraries?",
+    "expected_answer": "The itinerary evidence is article_04 from Vietnam Travel's plan-your-trip itineraries page.",
+    "expected_context": "article_04.json and article_04.md, source https://vietnam.travel/plan-your-trip/itineraries."
+  },
+  {
+    "question": "Which corpus source should be used for Phu Quoc destination answers?",
+    "expected_answer": "Phu Quoc answers should use article_05 from Vietnam Travel's southern Vietnam Phu Quoc destination page.",
+    "expected_context": "article_05.json and article_05.md, source https://vietnam.travel/places-to-go/southern-vietnam/phu-quoc."
+  },
+  {
+    "question": "How many public article JSON files are included in the landing corpus?",
+    "expected_answer": "The landing corpus includes five public article JSON files.",
+    "expected_context": "docs/CORPUS_SOURCES.md lists article_01.json through article_05.json under Public article/page landing files."
+  },
+  {
+    "question": "What metadata fields must each article JSON contain?",
+    "expected_answer": "Each article JSON must contain url, title, date_crawled, and content_markdown.",
+    "expected_context": "docs/CORPUS_SOURCES.md states that article JSON files contain url, title, date_crawled, and content_markdown."
+  },
+  {
+    "question": "Where are standardized Markdown outputs stored?",
+    "expected_answer": "Standardized Markdown outputs are stored under data/standardized/legal and data/standardized/news.",
+    "expected_context": "Lab requirement and repository structure use data/standardized/legal and data/standardized/news."
+  },
+  {
+    "question": "Which legal file represents the Vietnam Tourism Law 2017 source?",
+    "expected_answer": "The Tourism Law 2017 source is luat-du-lich-2017.pdf.",
+    "expected_context": "docs/CORPUS_SOURCES.md lists luat-du-lich-2017.pdf as an official law PDF from a government source."
+  },
+  {
+    "question": "Which legal file represents Decree 168/2017/ND-CP?",
+    "expected_answer": "The decree source is nghi-dinh-168-2017-nd-cp.pdf.",
+    "expected_context": "docs/CORPUS_SOURCES.md lists nghi-dinh-168-2017-nd-cp.pdf as a government decree detailing selected articles of the Tourism Law."
+  },
+  {
+    "question": "Which legal file represents Circular 06/2017/TT-BVHTTDL?",
+    "expected_answer": "The circular source is thong-tu-06-2017-tt-bvhttdl.pdf.",
+    "expected_context": "docs/CORPUS_SOURCES.md lists thong-tu-06-2017-tt-bvhttdl.pdf as a ministry circular."
+  },
+  {
+    "question": "What limitation exists for the legal PDF text extraction in this environment?",
+    "expected_answer": "The legal PDFs include scanned or otherwise unusable text layers, so OCR is required before deeper indexing.",
+    "expected_context": "The standardized legal Markdown files note that the PDFs have no usable text layer in the current environment and should be OCRed."
+  },
+  {
+    "question": "What retrieval methods are compared in the A/B evaluation?",
+    "expected_answer": "The evaluation compares dense-only retrieval against hybrid retrieval using dense, BM25, and RRF.",
+    "expected_context": "Lab requirement describes Config A as dense-only and Config B as hybrid + RRF."
+  },
+  {
+    "question": "What are the four evaluation metrics required by the lab?",
+    "expected_answer": "The required metrics are faithfulness, answer relevance, context recall, and context precision.",
+    "expected_context": "The lab requirement section on A/B evaluation names faithfulness, answer relevance, context recall, and context precision."
+  },
+  {
+    "question": "What should the chatbot do when there is not enough evidence?",
+    "expected_answer": "It should use fallback when possible or safely refuse instead of fabricating an answer.",
+    "expected_context": "The lab requirement says the system must handle missing evidence with fallback or safe refusal and must not hallucinate unsupported answers."
+  }
+]
